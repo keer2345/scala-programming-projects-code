@@ -2,6 +2,7 @@ import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
 
 class MainSpec extends AnyWordSpec with Matchers  {
+
   "A Person" when {
     "non-empty" should {
       "be instantiated with a age and  name" in {
@@ -9,6 +10,28 @@ class MainSpec extends AnyWordSpec with Matchers  {
           john.firstName should be("John")
           john.lastName should be("Smith")
           john.age should be(42)
+      }
+      "Get a human readable representation of the person" in {
+        val paul = Person(firstName="Paul",lastName="Smith",age=24)
+        paul.description should be("Paul Smith is 24 years old")
+      }
+    }
+  }
+  
+  "The Person" when {
+    "compainon object" should {
+      val (akira,peter,nick) = (
+        Person(firstName="Akira",lastName="Sakura",age=12),
+        Person(firstName="Peter",lastName="Muller",age=34),
+        Person(firstName="Nick",lastName="Tagart",age=52)
+      )
+      "return a list of adult person" in {
+        val ref = List(akira,peter,nick)
+        Person.filterAdult(ref) should be(List(peter,nick))
+      }
+      "return an empty list if no adult in the list" in {
+        val ref = List(akira)
+        Person.filterAdult(ref) should be(List.empty[Person])
       }
     }
   }
