@@ -175,3 +175,30 @@ def foldLeft(z: Double)(op: (Double, A) => Double): Double
 [info] Tests: succeeded 2, failed 0, canceled 0, ignored 0, pending 0
 [info] All tests passed.
 ```
+
+## Refactoring the production code
+
+在 TDD 开发模式里，测试通过后一般都会重构代码。如果测试覆盖率良好，就不用担心修改代码，因为任何错误都应该由测试来标记。这就是所谓的红绿重构（**Red-Green-Refactor**）周期。
+
+`futureCapital` 代码改变如下：
+```scala
+  def futureCapital(
+      interestRate: Double,
+      nbOfMonths: Int,
+      netIncome: Int,
+      currentExpenses: Int,
+      initialCapital: Double
+  ): Double = {
+    val monthlySavings = netIncome - currentExpenses
+
+    (0 until nbOfMonths).foldLeft(initialCapital)((accumulated, _) =>
+      accumulated * (1 + interestRate) + monthlySavings
+    )
+  }
+```
+这是个在 `foldLeft` 调用内联的 `nextCapital` 函数。在 Scala 中，我们可以这样定义匿名函数（**anonymous function**）：
+```scala
+(param1, param2, ..., paramN) => function body
+```
+
+我们看到参数 `month` 并没有在 `nextCapital` 中使用。在匿名函数里，将不是用的参数用 `_` 表示。参数 `_` 不能用于函数体，如果尝试将其替换成有意义的参数名，类似 Intellij IDEA 将会标出下划线，提示该参数是 `Declaration is never used`。
