@@ -56,5 +56,18 @@ class RetCalcSpec
 
       }
     }
+    "nbOfMonthsSaving" should {
+      "calculate how long I need to save before I can retire" in {
+        val actual = RetCalc.nbOfMonthsSaving(
+          interestRate = 0.04 / 12,
+          nbOfMonthsInRetirement = 40 * 12,
+          netIncome = 3000,
+          currentExpenses = 2000,
+          initialCapital = 10000
+        )
+        val expected = 23 * 12 + 1
+        actual should ===(expected)
+      }
+    }
   }
 }

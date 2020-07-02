@@ -334,3 +334,50 @@ val res3: Double = 2.0
 ```
 
 再测试 `RetCalaSpec`，看到测试通过了。
+
+# Calculating when you can retire
+如果尝试从 Scala Console 调用 `simulatePlan`，你可能尝试了不同的 `nbOfMonths` 值来观察退休时和死亡时的资金。拥有一个查找最优的 `nbOfMonths` 的函数是很有必要的，以便于有足够的资金并且在退休的日子里花不完。
+
+
+```scala
+    "nbOfMonthsSaving" should {
+      "calculate how long I need to save before I can retire" in {
+        val actual = RetCalc.nbOfMonthsSaving(
+          interestRate = 0.04 / 12,
+          nbOfMonthsInRetirement = 40 * 12,
+          netIncome = 3000,
+          currentExpenses = 2000,
+          initialCapital = 10000
+        )
+        val expected = 23 * 12 + 1
+        actual should ===(expected)
+      }
+    }
+```
+## Writing the function body
+
+```scala
+  def nbOfMonthsSaving(
+      interestRate: Double,
+      nbOfMonthsInRetirement: Int,
+      netIncome: Int,
+      currentExpenses: Int,
+      initialCapital: Double
+  ): Int = {
+    def loop(months: Int): Int = {
+      val (capitalAtRetirement, capitalAfterDeath) = simulatePlan(
+        interestRate = interestRate,
+        nbOfMonthsSaving = months,
+        nbOfMonthsInRetirement = nbOfMonthsInRetirement,
+        netIncome = netIncome,
+        currentExpenses = currentExpenses,
+        initialCapital = initialCapital
+      )
+      val returnValue = if (capitalAfterDeath > 0) months else loop(months + 1)
+      returnValue
+    }
+    loop(0)
+  }
+```
+
+我们声明了一个递归函数，
