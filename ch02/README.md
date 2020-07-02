@@ -237,3 +237,100 @@ class RetCalcSpec
   }
 }
 ```
+如果在退休后的 40 年，每个月的支出相同并且没有任何收入的话，你将有一笔资金留给继承人。如果资金是负数，就意味着你在退休的某个时候把钱花光了，这是我们想要避免的结果。
+
+可以从 Scala 控制台根据自身情况来尝试不同的结果，通过不同的利率来观察资金变成负数的情况。
+
+请注意，在生产系统中，您肯定会添加更多单元测试来覆盖其他一些边缘情况，并确保函数不会崩溃。由于我们将在第 3 章”处理错误“中介绍错误处理，我们可以假设 `futureCapital` 的测试覆盖率目前已经足够好了。
+
+## Simulating a retirement plan
+
+既然我们知道了如何计算退休时和死后的资本，那么将这两个调用合并到一个函数中会很有用。此函数将一次性模拟退休计划。
+
+`RetCalcSpec.scala`:
+```scala
+  "RetCalc" when {
+    "simulatePlan" should {
+      "calculate the capital at retirement and the capital after death" in {
+        val (capitalAtRetirement, capitalAfterDeath) = RetCalc.simulatePlan(
+          interestRate = 0.04 / 12,
+          nbOfMonthsSaving = 25 * 12,
+          nbOfMonthsInRetirement = 40 * 12,
+          netIncome = 3000,
+          currentExpenses = 2000,
+          initialCapital = 10000
+        )
+        capitalAtRetirement should ===(541267.1990)
+        capitalAfterDeath should ===(309867.5316)
+
+      }
+    }
+  }
+```
+`RetCalc.scala`:
+```scala
+  def simulatePlan(
+      interestRate: Double,
+      nbOfMonthsSaving: Int,
+      nbOfMonthsInRetirement: Int,
+      netIncome: Int,
+      currentExpenses: Int,
+      initialCapital: Double
+  ): Double = ???
+```
+
+这这时候测试也是失败的，函数 `simulatePlan` 必须返回两个值，最简单的方式是使用 `Tuple2`，在 Scala 中元组是不可变的数据结构并支持多种不同类型的对象。这与 `case class` 相似，`case class` 的属性特定名称。我们称 `tuple` 或 `case class` 为生产类型。
+
+```scala
+scala> val tuple3 = (1, "hello", 2.0)
+val tuple3: (Int, String, Double) = (1,hello,2.0)
+
+scala> tuple3._1
+val res0: Int = 1
+
+scala> tuple3._2
+val res1: String = hello
+
+scala> val (a, b, c) = tuple3
+val a: Int = 1
+val b: String = hello
+val c: Double = 2.0
+
+scala> a
+val res2: Int = 1
+
+scala> c
+val res3: Double = 2.0
+```
+
+元组最大长度为 22，访问元素可以通过 `_1`，`_2` 的形式。我们可以为元组的每个元素一次声明多个变量。
+
+```scala
+  def simulatePlan(
+      interestRate: Double,
+      nbOfMonthsSaving: Int,
+      nbOfMonthsInRetirement: Int,
+      netIncome: Int,
+      currentExpenses: Int,
+      initialCapital: Double
+  ): (Double, Double) = {
+    val capitalAtRetirement = futureCapital(
+      interestRate = interestRate,
+      nbOfMonths = nbOfMonthsSaving,
+      netIncome = netIncome,
+      currentExpenses = currentExpenses,
+      initialCapital = initialCapital
+    )
+    val capitalAfterDeath = futureCapital(
+      interestRate = initialCapital,
+      nbOfMonths = nbOfMonthsInRetirement,
+      netIncome = 0,
+      currentExpenses = currentExpenses,
+      initialCapital = capitalAtRetirement
+    )
+
+    (capitalAtRetirement, capitalAfterDeath)
+  }
+```
+
+再测试 `RetCalaSpec`，看到测试通过了。
