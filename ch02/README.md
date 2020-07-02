@@ -202,3 +202,38 @@ def foldLeft(z: Double)(op: (Double, A) => Double): Double
 ```
 
 我们看到参数 `month` 并没有在 `nextCapital` 中使用。在匿名函数里，将不是用的参数用 `_` 表示。参数 `_` 不能用于函数体，如果尝试将其替换成有意义的参数名，类似 Intellij IDEA 将会标出下划线，提示该参数是 `Declaration is never used`。
+
+## Writing a test for the decumulation phase
+到目前已经知道退休时期望的资金是多少了，是时候将 `futureCapital` 函数用于计算你的技能人能有多少资金了。
+
+添加如下测试到 `RetCalcSpec`，在之前的测试单元下方，并运行它，应该能通过：
+```scala
+class RetCalcSpec
+    extends AnyWordSpec
+    with Matchers
+    with TypeCheckedTripleEquals {
+
+  implicit val doubleEquality: Equality[Double] =
+    TolerantNumerics.tolerantDoubleEquality(0.0001)
+
+  "RetCalc" when {
+    "futureCapital" should {
+      "calculate the amount of savings I will have in n months" in {
+        // ...
+      }
+
+      "calculate how much savings will be left after having taken a pernsion for n months" in {
+        val actual = RetCalc.futureCapital(
+          interestRate = 0.04 / 12,
+          nbOfMonths = 40 * 12,
+          netIncome = 0,
+          currentExpenses = 2000,
+          initialCapital = 541267.1990
+        )
+        val expected = 309867.53176
+        actual should ===(expected)
+      }
+    }
+  }
+}
+```
