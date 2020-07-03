@@ -437,3 +437,19 @@ import scala.annotation.tailrec
 ```
 
 上面在这段代码使用了**尾部递归**（tail-recursive）。通常来说，超过 100 次的递归都应该使用尾部递归，否则会报堆栈溢出错误（`StackOverflowError`）。尾部递归使用 `@tailrec` 注解可以让编译器校验它是否是尾部递归。
+
+## Ensuring termination
+
+我们的代码还没有完成，因为函数可能无限循环。假设你花的比挣得多，将永远不能存够退休：
+```scala
+    "not loop forever if I enter bad parameters" in {
+      val actual = RetCalc.nbOfMonthsSaving(
+        interestRate = 0.04 / 12,
+        nbOfMonthsInRetirement = 40 * 12,
+        netIncome = 1000,
+        currentExpenses = 2000,
+        initialCapital = 10000
+      )
+      actual should ===(Int.MaxValue)
+    }
+```
