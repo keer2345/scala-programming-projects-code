@@ -68,6 +68,17 @@ class RetCalcSpec
         val expected = 23 * 12 + 1
         actual should ===(expected)
       }
+      "not crash if the resulting nbOfMonths is very high" in {
+        val actual = RetCalc.nbOfMonthsSaving(
+          interestRate = 0.01 / 12,
+          nbOfMonthsInRetirement = 40 * 12,
+          netIncome = 3000,
+          currentExpenses = 2999,
+          initialCapital = 0
+        )
+        val expected = 8280
+        actual should ===(expected)
+      }
     }
   }
 }

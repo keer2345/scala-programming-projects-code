@@ -381,3 +381,59 @@ val res3: Double = 2.0
 ```
 
 我们声明了一个递归函数，
+
+
+## Understanding tail-recursion
+继续新的测试：
+```scala
+    "nbOfMonthsSaving" should {
+      "calculate how long I need to save before I can retire" in {
+      // ...
+      }
+      "not crash if the resulting nbOfMonths is very high" in {
+        val actual = RetCalc.nbOfMonthsSaving(
+          interestRate = 0.01 / 12,
+          nbOfMonthsInRetirement = 40 * 12,
+          netIncome = 3000,
+          currentExpenses = 2999,
+          initialCapital = 0
+        )
+        val expected = 8280
+        actual should ===(expected)
+      }
+    }
+```
+```scala
+package retcalc
+
+import scala.annotation.tailrec
+
+// ...
+
+  def nbOfMonthsSaving(
+      interestRate: Double,
+      nbOfMonthsInRetirement: Int,
+      netIncome: Int,
+      currentExpenses: Int,
+      initialCapital: Double
+  ): Int = {
+    @tailrec
+    def loop(months: Int): Int = {
+      val (capitalAtRetirement, capitalAfterDeath) = simulatePlan(
+        interestRate = interestRate,
+        nbOfMonthsSaving = months,
+        nbOfMonthsInRetirement = nbOfMonthsInRetirement,
+        netIncome = netIncome,
+        currentExpenses = currentExpenses,
+        initialCapital = initialCapital
+      )
+      //   val returnValue = if (capitalAfterDeath > 0) months else loop(months + 1)
+      //   returnValue
+      if (capitalAfterDeath > 0.0) months else loop(months + 1)
+    }
+    // loop(0)
+    if (netIncome > currentExpenses) loop(0) else Int.MaxValue
+  }
+```
+
+上面在这段代码使用了**尾部递归**（tail-recursive）。通常来说，超过 100 次的递归都应该使用尾部递归，否则会报堆栈溢出错误（`StackOverflowError`）。尾部递归使用 `@tailrec` 注解可以让编译器校验它是否是尾部递归。
