@@ -486,3 +486,64 @@ case class VariableReturns(returns: Vector[VariableReturn]) extends Returns
 case class VariableReturn(monthId: String, monthlyRate: Double)
 ```
 对于 `VariableReturn`，我们保留月利率和标识 `monthId` 为 $2017.02$，即 *February 2017*。推荐使用 `Vector` 来构件元素的序列模型，`Vector` 在 appending/inserting  和 通过索引访问元素封面比 `List` 快速。
+
+## Filtering returns for a specific period
+
+当我们在很长一段时间内（例如 1900 年至 2017 年）有可变回报（`VariableReturns`）时，使用一个较小的周期来模拟如果在较短时期（比如 50 年）内的历史回报率将重复发生，将会发生什么。
+
+我们在 `VariableReturns` 类中创建方法来确保汇报只包含特定的时。下面是 `ReturnsSpec.scala` 测试单元：
+
+
+```scala
+package retcalc
+
+import org.scalatest.wordspec.AnyWordSpec
+import org.scalatest.matchers.should.Matchers
+import org.scalactic.TypeCheckedTripleEquals
+import org.scalactic.Equality
+import org.scalactic.TolerantNumerics
+
+class ReturnsSpec
+    extends AnyWordSpec
+    with Matchers
+    with TypeCheckedTripleEquals {
+  implicit val doubleEquality: Equality[Double] =
+    TolerantNumerics.tolerantDoubleEquality(0.0001)
+  "VariableReturns" when {
+    "formUntil" should {
+      "keep only a window of the returns" in {
+        val variableReturns = VariableReturns(Vector.tabulate(12) { i =>
+          val d = (i + 1).toDouble
+          VariableReturn(f"2017.$d%02.0f", d)
+        })
+
+        variableReturns.fromUntil("2017.07", "2017.09").returns should ===(
+          Vector(VariableReturn("2017.07", 7.0), VariableReturn("2017.08", 8.0))
+        )
+
+        variableReturns.fromUntil("2017.10", "2018.01").returns should ===(
+          Vector(
+            VariableReturn("2017.10", 10.0),
+            VariableReturn("2017.11", 11.0),
+            VariableReturn("2017.12", 12.0)
+          )
+        )
+      }
+    }
+  }
+}
+```
+首先，我们创建一个有 12 个元素的序列，从 `2017.01` 到 `2017.12`。用函数 `fromUntil`来指定开始年月和终止年月。
+
+完善 `VariableReturns` 类：
+
+```scala
+case class VariableReturns(returns: Vector[VariableReturn]) extends Returns {
+  def fromUntil(monthIdFrom: String, monthIdUntils: String): VariableReturns =
+    VariableReturns(
+      returns
+        .dropWhile(_.monthId != monthIdFrom)
+        .takeWhile(_.monthId != monthIdUntils)
+    )
+}
+```
