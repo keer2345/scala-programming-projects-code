@@ -453,3 +453,36 @@ import scala.annotation.tailrec
       actual should ===(Int.MaxValue)
     }
 ```
+# Using market rates
+在我们的计算中，一直假设利率是一个常量，但实际上复杂得多。用市场数据中的实际利率来对我们的退休计划获得更多信心，这将更为准确。为此，我们手下你需要修改代码，以便使用可变的利率执行相同的计算。之后，我们将加载真实的市场数据，通过跟踪标准普尔 500 指数来模拟基金的常规投资。
+
+## Defining an algebraic data type
+
+为了支持可变利率，我们需要改变含有入参 `interestRate: Double` 的所有函数。我们需要一个可以表示常量利率或义序列利率的类型。
+
+考虑到 `A` 和 `B` 两种类型，我们之前知道了如何定义类型 `A` sum 类型 `B`，这是一个生产类型，我们可以使用元组来定义，例如 `ab: (A, B)`，或者 `case class MyProduct(a:A, b: B)`。
+
+换而言之，可以包含 `A` 或 `B` 的合计类型，在 Scala 中，我们使用 `sealed` trait 来继承:
+```scala
+sealed trait Shape
+case class Circle(diameter: Double) extends Shape
+case class Rectangle(width: Double, height: Double) extends Shapte
+```
+
+代数数据类型（Algebraic Data Type - ADT）是结合 sum types 和 product types 来定义的数据结构。刚才我们定义了 `Shape` 代数数据类型。
+
+`sealed` 关键字表示所有子类必须与 trait 声明在同一个 `.scala` 文件。如果尝试在其他文件声明一个类来继承 `sealed` 特质，编译器将拒绝。
+
+回到我们的问题，我们可以定义一个 `Returns` ADT，在 `src/main/scala` 的 `retcalc` 包创建一个新的 Scala 类：
+
+```scala
+package retcalc
+
+sealed trait Returns
+
+case class FixedReturns(annualRate: Double) extends Returns
+case class VariableReturns(returns: Vector[VariableReturn]) extends Returns
+
+case class VariableReturn(monthId: String, monthlyRate: Double)
+```
+对于 `VariableReturn`，我们保留月利率和标识 `monthId` 为 $2017.02$，即 *February 2017*。推荐使用 `Vector` 来构件元素的序列模型，`Vector` 在 appending/inserting  和 通过索引访问元素封面比 `List` 快速。
