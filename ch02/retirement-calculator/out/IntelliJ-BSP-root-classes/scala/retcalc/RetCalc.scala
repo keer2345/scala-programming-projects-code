@@ -17,7 +17,7 @@ object RetCalc {
     //   accumulated * (1 + interestRate) + monthlySavings
     // )
     (0 until nbOfMonths).foldLeft(initialCapital) {
-      case (accumulated, month) =>
+      (accumulated, month) =>
         accumulated * (1 + Returns.monthlyRate(returns, month)) + monthlySavings
     }
 

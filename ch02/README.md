@@ -547,3 +547,127 @@ case class VariableReturns(returns: Vector[VariableReturn]) extends Returns {
     )
 }
 ```
+
+## Pattern Matching
+
+现在，我们有了多种返回值，需要修改 `futureCapital` 函数来接受 `Returns` 类型，替换 `Double` 类型的月利率：
+```scala
+"RetCalc" when {
+  "futureCapital" should {
+    "calculate the amount of savings I will have in n months" in {
+      // Excel = -FV(0.04/12, 25*12, 1000, 10000)
+
+      val actual = RetCalc.futureCapital(
+        //   interestRate = 0.04 / 12,
+        FixedReturns(0.04),
+        nbOfMonths = 25 * 12,
+        netIncome = 3000,
+        currentExpenses = 2000,
+        initialCapital = 10000
+      )
+
+      val expected = 541267.1990
+      actual should ===(expected)
+    }
+
+    "calculate how much savings will be left after having taken a pernsion for n months" in {
+      val actual = RetCalc.futureCapital(
+        // interestRate = 0.04 / 12,
+        FixedReturns(0.04),
+        nbOfMonths = 40 * 12,
+        netIncome = 0,
+        currentExpenses = 2000,
+        initialCapital = 541267.1990
+      )
+      val expected = 309867.53176
+      actual should ===(expected)
+    }
+  }
+}
+```
+相应的，`RetCalc.futureCapital` 也做修改：
+```scala
+
+  def futureCapital(
+      // interestRate: Double,
+      returns: Returns,
+      nbOfMonths: Int,
+      netIncome: Int,
+      currentExpenses: Int,
+      initialCapital: Double
+  ): Double = {
+    val monthlySavings = netIncome - currentExpenses
+
+    (0 until nbOfMonths).foldLeft(initialCapital) {
+      case (accumulated, month) =>
+        accumulated * (1 + Returns.monthlyRate(returns, month)) + monthlySavings
+    }
+  }
+```
+
+创建测试单元 `src/test/scala/retcalc/ReturnsSpec.scala`:
+```scala
+  "Returns.object" when {
+    "monthlyRate" should {
+      "return a fixed rate for a FixedReturn" in {
+        Returns.monthlyRate(FixedReturns(0.04), 0) should ===(0.04 / 12)
+        Returns.monthlyRate(FixedReturns(0.04), 9) should ===(0.04 / 12)
+      }
+
+      val variableReturns = VariableReturns(Vector(
+        VariableReturn("2000.01", 0.1), VariableReturn("2000.02", 0.2)
+      ))
+
+      "return the nth rate for VariableReturn" in {
+        Returns.monthlyRate(variableReturns,0) should ===(0.1)
+        Returns.monthlyRate(variableReturns,1) should ===(0.2)
+      }
+      "roll over from the first rate if n > length" in {
+        Returns.monthlyRate(variableReturns, 2) should ===(0.1)
+        Returns.monthlyRate(variableReturns, 3) should ===(0.2)
+        Returns.monthlyRate(variableReturns, 4) should ===(0.1)
+      }
+    }
+  }
+```
+
+`Returns.scala`:
+```scala
+object Returns {
+  def monthlyRate(returns: Returns, month: Int): Double = returns match {
+    case FixedReturns(r) => r / 12
+    case VariableReturns(rs) => rs(month % rs.length).monthlyRate
+  }
+}
+```
+
+
+这是个简单的例子，但我们可以有更复杂的模式。这种特性非常强大，通常替换 `if/else` 表达式。比如：
+```scala
+scala> Vector(1, 2, 3, 4) match {
+     |   case head +: second +: tail => tail
+     | }
+val res5: scala.collection.immutable.Vector[Int] = Vector(3, 4)
+
+scala> Vector(1, 2, 3, 4) match {
+     |   case head +: second +: tail => second
+     | }
+val res6: Int = 2
+
+scala> ("0", 1, (2.0, 3.0)) match {
+     |   case ("0", int, (d0, d1)) => d0 + d1
+     | }
+val res7: Double = 5.0
+
+scala> "hello" match {
+     |   case "hello" | "world" => 1
+     |   case "hello world world" => 2
+     | }
+val res8: Int = 1
+```
+
+我是函数式编程的的倡导者，更喜欢在对象红使用纯函数：
+- 因为整个调度逻辑在一个地方，所以它们更容易推理。
+- 很容易一直到其他对象，有助于重构。
+- 它们的范围更为有限。在类方法中，始终在作用域中拥有类的所有属性。在函数中，只有函数的参数。这有助于单元测试和可读性，因为您知道函数除了参数之外不能使用其他任何东西。另外，当类具有可变属性时，它可以避免副作用。
+- 有时在面向对象的设计中，当一个方法操作两个对象`A` 和 `B` 时，不清楚该方法应该在类 `A` 还是类 `B` 中。
