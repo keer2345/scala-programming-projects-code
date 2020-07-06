@@ -671,3 +671,98 @@ val res8: Int = 1
 - 很容易一直到其他对象，有助于重构。
 - 它们的范围更为有限。在类方法中，始终在作用域中拥有类的所有属性。在函数中，只有函数的参数。这有助于单元测试和可读性，因为您知道函数除了参数之外不能使用其他任何东西。另外，当类具有可变属性时，它可以避免副作用。
 - 有时在面向对象的设计中，当一个方法操作两个对象`A` 和 `B` 时，不清楚该方法应该在类 `A` 还是类 `B` 中。
+
+## Refactoring simulatePlan
+我们改变了方法 `futureCaptial`，也就需要修改相应调用它的函数，也就是 `simulatePlan`。
+
+例如，考虑到从 1950 年开始存钱，直到 1975 年。我们创建新的测试单元以确保使用不同的返回值：
+```scala
+    val params = RetCalcParams(
+      nbOfMonthsInRetirement = 40 * 12,
+      netIncome = 3000,
+      currentExpenses = 2000,
+      initialCapital = 10000
+    )
+    "simulatePlan" should {
+      "calculate the capital at retirement and the capital after death" in {
+        val (capitalAtRetirement, capitalAfterDeath) = RetCalc.simulatePlan(
+          returns = FixedReturns(0.04),
+          params,
+          nbOfMonthsSavings = 25 * 12
+        )
+        capitalAtRetirement should ===(541267.1990)
+        capitalAfterDeath should ===(309867.5316)
+      }
+      "use different returns for capitalistation and drawdown" in {
+        val nbOfMonthsSavings = 25 * 12
+        val returns = VariableReturns(
+          Vector.tabulate(nbOfMonthsSavings + params.nbOfMonthsInRetirement)(
+            i =>
+              if (i < nbOfMonthsSavings) VariableReturn(i.toString, 0.04 / 12)
+              else VariableReturn(i.toString, 0.03 / 12)
+          )
+        )
+        val (capitalAtRetirement, capitalAfterDeath) =
+          RetCalc.simulatePlan(returns, params, nbOfMonthsSavings)
+
+        capitalAtRetirement should ===(541267.1990)
+        capitalAfterDeath should ===(-57737.7227)
+      }
+```
+
+`RetCalc.scala`：
+```scala
+case class RetCalcParams(nbOfMonthsInRetirement: Int,
+                         netIncome: Int,
+                         currentExpenses: Int,
+                         initialCapital: Double)
+```
+```scala
+  def simulatePlan(returns: Returns,
+                   params: RetCalcParams,
+                   nbOfMonthsSavings: Int,
+                   monthOffset: Int = 0): (Double, Double) = {
+    import params._
+    val capitalAtRetirement = futureCapital(
+      returns = OffsetReturns(returns, monthOffset),
+      nbOfMonths = nbOfMonthsSavings,
+      netIncome = netIncome,
+      currentExpenses = currentExpenses,
+      initialCapital = initialCapital
+    )
+    val capitalAfterDeath = futureCapital(
+      returns = OffsetReturns(returns, monthOffset + nbOfMonthsSavings),
+      nbOfMonths = nbOfMonthsInRetirement,
+      netIncome = 0,
+      currentExpenses = currentExpenses,
+      initialCapital = capitalAtRetirement
+    )
+
+    (capitalAtRetirement, capitalAfterDeath)
+  }
+```
+`ReturnsSpec.scala`:
+```scala
+val variableReturns = VariableReturns(
+  Vector(VariableReturn("2000.01", 0.1), VariableReturn("2000.02", 0.2))
+)
+
+"return the n+offset th rate for OffsetReturn" in {
+  val returns = OffsetReturns(variableReturns, 1)
+  Returns.monthlyRate(returns, 0) should ===(0.2)
+  Returns.monthlyRate(returns, 1) should ===(0.1)
+}
+```
+
+`Returns.scala`:
+```scala
+object Returns {
+  def monthlyRate(returns: Returns, month: Int): Double = returns match {
+    case FixedReturns(r)           => r / 12
+    case VariableReturns(rs)       => rs(month % rs.length).monthlyRate
+    case OffsetReturns(rs, offset) => monthlyRate(rs, month + offset)
+  }
+}
+
+case class OffsetReturns(orig: Returns, offset: Int) extends Returns
+```

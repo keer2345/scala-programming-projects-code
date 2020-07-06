@@ -6,8 +6,9 @@ sealed trait Returns
 
 object Returns {
   def monthlyRate(returns: Returns, month: Int): Double = returns match {
-    case FixedReturns(r) => r / 12
-    case VariableReturns(rs) => rs(month % rs.length).monthlyRate
+    case FixedReturns(r)           => r / 12
+    case VariableReturns(rs)       => rs(month % rs.length).monthlyRate
+    case OffsetReturns(rs, offset) => monthlyRate(rs, month + offset)
   }
 }
 
@@ -23,3 +24,4 @@ case class VariableReturns(returns: Vector[VariableReturn]) extends Returns {
 }
 
 case class VariableReturn(monthId: String, monthlyRate: Double)
+case class OffsetReturns(orig: Returns, offset: Int) extends Returns

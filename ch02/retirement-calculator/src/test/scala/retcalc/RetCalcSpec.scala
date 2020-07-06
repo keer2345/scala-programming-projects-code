@@ -46,40 +46,53 @@ class RetCalcSpec
   }
 
   "RetCalc" when {
+    val params = RetCalcParams(
+      nbOfMonthsInRetirement = 40 * 12,
+      netIncome = 3000,
+      currentExpenses = 2000,
+      initialCapital = 10000
+    )
     "simulatePlan" should {
       "calculate the capital at retirement and the capital after death" in {
         val (capitalAtRetirement, capitalAfterDeath) = RetCalc.simulatePlan(
-          interestRate = 0.04 / 12,
-          nbOfMonthsSaving = 25 * 12,
-          nbOfMonthsInRetirement = 40 * 12,
-          netIncome = 3000,
-          currentExpenses = 2000,
-          initialCapital = 10000
+          returns = FixedReturns(0.04),
+          params,
+          nbOfMonthsSavings = 25 * 12
         )
         capitalAtRetirement should ===(541267.1990)
         capitalAfterDeath should ===(309867.5316)
+      }
+      "use different returns for capitalistation and drawdown" in {
+        val nbOfMonthsSavings = 25 * 12
+        val returns = VariableReturns(
+          Vector.tabulate(nbOfMonthsSavings + params.nbOfMonthsInRetirement)(
+            i =>
+              if (i < nbOfMonthsSavings) VariableReturn(i.toString, 0.04 / 12)
+              else VariableReturn(i.toString, 0.03 / 12)
+          )
+        )
+        val (capitalAtRetirement, capitalAfterDeath) =
+          RetCalc.simulatePlan(returns, params, nbOfMonthsSavings)
 
+        capitalAtRetirement should ===(541267.1990)
+        capitalAfterDeath should ===(-57737.7227)
       }
     }
     "nbOfMonthsSaving" should {
       "calculate how long I need to save before I can retire" in {
-        val actual = RetCalc.nbOfMonthsSaving(
-          interestRate = 0.04 / 12,
-          nbOfMonthsInRetirement = 40 * 12,
-          netIncome = 3000,
-          currentExpenses = 2000,
-          initialCapital = 10000
-        )
+        val actual = RetCalc.nbOfMonthsSaving(params, FixedReturns(0.04))
         val expected = 23 * 12 + 1
         actual should ===(expected)
       }
       "not crash if the resulting nbOfMonths is very high" in {
         val actual = RetCalc.nbOfMonthsSaving(
-          interestRate = 0.01 / 12,
-          nbOfMonthsInRetirement = 40 * 12,
-          netIncome = 3000,
-          currentExpenses = 2999,
-          initialCapital = 0
+          params = RetCalcParams(
+            nbOfMonthsInRetirement = 40 * 12,
+            netIncome = 3000,
+            currentExpenses = 2999,
+            initialCapital = 0
+          ),
+          returns = FixedReturns(0.01)
         )
         val expected = 8280
         actual should ===(expected)
@@ -87,11 +100,8 @@ class RetCalcSpec
     }
     "not loop forever if I enter bad parameters" in {
       val actual = RetCalc.nbOfMonthsSaving(
-        interestRate = 0.04 / 12,
-        nbOfMonthsInRetirement = 40 * 12,
-        netIncome = 1000,
-        currentExpenses = 2000,
-        initialCapital = 10000
+        params.copy(netIncome = 1000),
+        FixedReturns(0.04)
       )
       actual should ===(Int.MaxValue)
     }

@@ -1,13 +1,11 @@
 package retcalc
 
+import org.scalactic.{Equality, TolerantNumerics, TypeCheckedTripleEquals}
 import org.scalatest.wordspec.AnyWordSpec
 import org.scalatest.matchers.should.Matchers
-import org.scalactic.TypeCheckedTripleEquals
-import org.scalactic.Equality
-import org.scalactic.TolerantNumerics
 
 class ReturnsSpec
-  extends AnyWordSpec
+    extends AnyWordSpec
     with Matchers
     with TypeCheckedTripleEquals {
   implicit val doubleEquality: Equality[Double] =
@@ -42,18 +40,23 @@ class ReturnsSpec
         Returns.monthlyRate(FixedReturns(0.04), 9) should ===(0.04 / 12)
       }
 
-      val variableReturns = VariableReturns(Vector(
-        VariableReturn("2000.01", 0.1), VariableReturn("2000.02", 0.2)
-      ))
+      val variableReturns = VariableReturns(
+        Vector(VariableReturn("2000.01", 0.1), VariableReturn("2000.02", 0.2))
+      )
 
       "return the nth rate for VariableReturn" in {
-        Returns.monthlyRate(variableReturns,0) should ===(0.1)
-        Returns.monthlyRate(variableReturns,1) should ===(0.2)
+        Returns.monthlyRate(variableReturns, 0) should ===(0.1)
+        Returns.monthlyRate(variableReturns, 1) should ===(0.2)
       }
       "roll over from the first rate if n > length" in {
         Returns.monthlyRate(variableReturns, 2) should ===(0.1)
         Returns.monthlyRate(variableReturns, 3) should ===(0.2)
         Returns.monthlyRate(variableReturns, 4) should ===(0.1)
+      }
+      "return the n+offset th rate for OffsetReturn" in {
+        val returns = OffsetReturns(variableReturns, 1)
+        Returns.monthlyRate(returns, 0) should ===(0.2)
+        Returns.monthlyRate(returns, 1) should ===(0.1)
       }
     }
   }
