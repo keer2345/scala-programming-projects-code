@@ -766,3 +766,148 @@ object Returns {
 
 case class OffsetReturns(orig: Returns, offset: Int) extends Returns
 ```
+# Loading market data
+为了计算更为真实，我们采用标准普尔500指数（S & P 500）。
+
+构建测试单元：
+```scala
+package retcalc
+
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+
+class EquityDataSpec extends AnyWordSpec with Matchers {
+  "EquityData" when {
+    "formResource" should {
+      "load market data from a tsv file" in {
+        val data = EquityData.formResource("sp500_2017.tsv")
+        data should ===(
+          Vector(
+            EquityData("2016.09", 2157.69, 45.03),
+            EquityData("2016.10", 2143.02, 45.25),
+            EquityData("2016.11", 2164.99, 45.48),
+            EquityData("2016.12", 2246.63, 45.7),
+            EquityData("2017.01", 2275.12, 45.93),
+            EquityData("2017.02", 2329.91, 46.15),
+            EquityData("2017.03", 2366.82, 46.38),
+            EquityData("2017.04", 2359.31, 46.66),
+            EquityData("2017.05", 2395.35, 46.94),
+            EquityData("2017.06", 2433.99, 47.22),
+            EquityData("2017.07", 2454.10, 47.54),
+            EquityData("2017.08", 2456.22, 47.85),
+            EquityData("2017.09", 2492.84, 48.17)
+          )
+        )
+      }
+    }
+
+    "monthlyDividend" should {
+      "return a monthly dividend" in {
+        EquityData("2016.09", 2157.69, 45.03).monthlyDividend should ===(
+          45.03 / 12
+        )
+      }
+    }
+  }
+}
+```
+## Loading the file with Source
+`EquityData.scala`:
+```scala
+package retcalc
+
+import scala.io.Source
+
+case class EquityData(monthId: String, value: Double, annualDividend: Double) {
+  val monthlyDividend: Double = annualDividend / 12
+}
+object EquityData {
+  def fromResource(resource: String): Vector[EquityData] =
+    Source
+      .fromResource(resource)
+      .getLines()
+      .drop(1)
+      .map { line =>
+        val fields = line.split("\t")
+        EquityData(
+          monthId = fields(0),
+          value = fields(1).toDouble,
+          annualDividend = fields(2).toDouble
+        )
+      }
+      .toVector
+}
+```
+`sp500_2017.tsv`:
+```csv
+month	SP500	dividend
+2016.09	2157.69	45.03
+2016.10	2143.02	45.25
+2016.11	2164.99	45.48
+2016.12	2246.63	45.7
+2017.01	2275.12	45.93
+2017.02	2329.91	46.15
+2017.03	2366.82	46.38
+2017.04	2359.31	46.66
+2017.05	2395.35	46.94
+2017.06	2433.99	47.22
+2017.07	2454.10	47.54
+2017.08	2456.22	47.85
+2017.09	2492.84	48.17
+```
+
+`InflationDataSpec.scala`:
+```scala
+package retcalc
+
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+
+class InflationDataSpec extends AnyWordSpec with Matchers {
+  "InflationData" when {
+    "fromResource" should {
+      "load CPI data from a tsv file" in {
+        val data = InflationData.fromResource("cpi_2017.tsv")
+        data should ===(
+          Vector(
+            InflationData("2016.09", 241.428),
+            InflationData("2016.10", 241.729),
+            InflationData("2016.11", 241.353),
+            InflationData("2016.12", 241.432),
+            InflationData("2017.01", 242.839),
+            InflationData("2017.02", 243.603),
+            InflationData("2017.03", 243.801),
+            InflationData("2017.04", 244.524),
+            InflationData("2017.05", 244.733),
+            InflationData("2017.06", 244.955),
+            InflationData("2017.07", 244.786),
+            InflationData("2017.08", 245.519),
+            InflationData("2017.09", 246.819)
+          )
+        )
+      }
+    }
+  }
+}
+```
+`InflationData.scala`:
+```scala
+package retcalc
+
+import scala.io.Source
+
+case class InflationData(methodId: String, value: Double)
+
+object InflationData {
+  def fromResource(resource: String): Vector[InflationData] =
+    Source
+      .fromResource(resource)
+      .getLines()
+      .drop(1)
+      .map { line =>
+        val fields = line.split("\t")
+        InflationData(methodId = fields(0), value = fields(1).toDouble)
+      }
+      .toVector
+}
+```
