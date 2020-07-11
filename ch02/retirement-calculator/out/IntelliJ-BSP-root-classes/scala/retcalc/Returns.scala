@@ -3,8 +3,8 @@ package retcalc
 sealed trait Returns
 
 object Returns {
-  def fromEquityAndInflationData(equities: Vector[EquityData],
-                                 inflations: Vector[InflationData]) =
+
+  def fromEquityAndInflationData(equities: Vector[EquityData], inflations: Vector[InflationData]): VariableReturns =
     VariableReturns(
       returns = equities
         .zip(inflations)

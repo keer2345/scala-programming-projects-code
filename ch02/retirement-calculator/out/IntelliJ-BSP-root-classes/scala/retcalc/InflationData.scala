@@ -12,9 +12,7 @@ object InflationData {
       .getLines()
       .drop(1)
       .map { line =>
-        val fields =
-          line
-            .split("\t")
+        val fields = line.split("\t")
         InflationData(methodId = fields(0), value = fields(1).toDouble)
       }
       .toVector

@@ -2,17 +2,16 @@ package retcalc
 
 import scala.annotation.tailrec
 
-case class RetCalcParams(nbOfMonthsInRetirement: Int,
-                         netIncome: Int,
-                         currentExpenses: Int,
-                         initialCapital: Double)
+case class RetCalcParams(nbOfMonthsInRetirement: Int, netIncome: Int, currentExpenses: Int, initialCapital: Double)
 
 object RetCalc {
-  def futureCapital(returns: Returns,
-                    nbOfMonths: Int,
-                    netIncome: Int,
-                    currentExpenses: Int,
-                    initialCapital: Double): Double = {
+  def futureCapital(
+      returns: Returns,
+      nbOfMonths: Int,
+      netIncome: Int,
+      currentExpenses: Int,
+      initialCapital: Double
+  ): Double = {
     val monthlySavings =
       netIncome - currentExpenses
 
@@ -34,10 +33,10 @@ object RetCalc {
     // ...
   }
 
-  def simulatePlan(returns: Returns,
-                   params: RetCalcParams,
-                   nbOfMonthsSavings: Int,
-                   monthOffset: Int = 0): (Double, Double) = {
+  def simulatePlan(returns: Returns, params: RetCalcParams, nbOfMonthsSavings: Int, monthOffset: Int = 0): (
+      Double,
+      Double
+  ) = {
     import params._
     val capitalAtRetirement =
       futureCapital(
