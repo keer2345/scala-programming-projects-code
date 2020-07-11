@@ -1,5 +1,3 @@
-import Dependencies._
-
 ThisBuild / scalaVersion := "2.13.2"
 ThisBuild / version := "0.1.0-SNAPSHOT"
 ThisBuild / organization := "com.example"
@@ -9,6 +7,7 @@ lazy val root = (project in file("."))
   .settings(
     name := "retirement calculator",
     libraryDependencies ++= Seq(
+      "org.scalameta" %% "scalafmt-dynamic" % "2.6.3",
       "org.scalactic" %% "scalactic" % "3.2.0",
       "org.scalatest" %% "scalatest" % "3.2.0" % "test"
     )

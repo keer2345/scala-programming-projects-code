@@ -7,7 +7,9 @@ class EquityDataSpec extends AnyWordSpec with Matchers {
   "EquityData" when {
     "formResource" should {
       "load market data from a tsv file" in {
-        val data = EquityData.fromResource("sp500_2017.tsv")
+        val data =
+          EquityData
+            .fromResource("sp500_2017.tsv")
         data should ===(
           Vector(
             EquityData("2016.09", 2157.69, 45.03),

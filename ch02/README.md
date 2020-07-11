@@ -146,7 +146,7 @@ object RetCalc {
   }
 ```
 
-`foldLeft` 具体是 
+`foldLeft` 具体是
 ```scala
 def foldLeft[B](z: B)(op: (B, A) => B): B
 ```
@@ -910,4 +910,15 @@ object InflationData {
       }
       .toVector
 }
+```
+
+## Computing real returns
+
+$$realReturn_n = \frac{price_n + dividends_n}{price_{n-1}} - \frac{inflation_n}{inflation_{n-1}}$$
+
+
+`ReturnsSpec.scala`:
+
+```scala
+
 ```
