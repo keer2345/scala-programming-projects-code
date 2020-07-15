@@ -7,9 +7,7 @@ class EquityDataSpec extends AnyWordSpec with Matchers {
   "EquityData" when {
     "formResource" should {
       "load market data from a tsv file" in {
-        val data =
-          EquityData
-            .fromResource("sp500_2017.tsv")
+        val data = EquityData.fromResource("sp500_2017.tsv")
         data should ===(
           Vector(
             EquityData("2016.09", 2157.69, 45.03),
@@ -25,17 +23,12 @@ class EquityDataSpec extends AnyWordSpec with Matchers {
             EquityData("2017.07", 2454.10, 47.54),
             EquityData("2017.08", 2456.22, 47.85),
             EquityData("2017.09", 2492.84, 48.17)
-          )
-        )
+          ))
       }
     }
 
     "monthlyDividend" should {
-      "return a monthly dividend" in {
-        EquityData("2016.09", 2157.69, 45.03).monthlyDividend should ===(
-          45.03 / 12
-        )
-      }
+      "return a monthly dividend" in { EquityData("2016.09", 2157.69, 45.03).monthlyDividend should ===(45.03 / 12) }
     }
   }
 }

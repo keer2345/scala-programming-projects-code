@@ -7,9 +7,7 @@ class InflationDataSpec extends AnyWordSpec with Matchers {
   "InflationData" when {
     "fromResource" should {
       "load CPI data from a tsv file" in {
-        val data =
-          InflationData
-            .fromResource("cpi_2017.tsv")
+        val data = InflationData.fromResource("cpi_2017.tsv")
         data should ===(
           Vector(
             InflationData("2016.09", 241.428),
@@ -25,8 +23,7 @@ class InflationDataSpec extends AnyWordSpec with Matchers {
             InflationData("2017.07", 244.786),
             InflationData("2017.08", 245.519),
             InflationData("2017.09", 246.819)
-          )
-        )
+          ))
       }
     }
   }

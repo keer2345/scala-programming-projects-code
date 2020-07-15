@@ -19,8 +19,7 @@ object SimulatePlanApp extends App {
         nbOfMonthsInRetirement = nbOfYearsInRetirement * 12,
         netIncome = args(3).toInt,
         currentExpenses = args(4).toInt,
-        initialCapital = args(5).toInt
-      ),
+        initialCapital = args(5).toInt),
       nbOfMonthsSavings = nbOfYearsSaving * 12
     )
 
