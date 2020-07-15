@@ -1044,3 +1044,16 @@ object SimulatePlanApp extends App {
   }
 }
 ```
+## Packaging the application
+到目前为止一切都很顺利，当时我们想将应用发送给 Bob 的时候，他也能同样计算退休计划吗？对他来说去下载 IntelliJ 或 SBT 是很不方便的。
+我们将应用打包成 `.jar` 文件以便于通过命令行运行。
+
+SBT 提供包任务来创建 `.jar` 文件，但是这个文件不包含其他依赖。为了连同依赖一起打包，我们使用 [sbt-assembly](https://github.com/sbt/sbt-assembly) 插件。创建文件 `project/assembly.sbt`：
+```scala
+addSbtPlugin("com.eed3si9n" % "sbt-assembly" % "0.15.0")
+```
+
+然后，编辑 `build.sbt`：
+```scala
+
+```
