@@ -6,7 +6,7 @@ ThisBuild / organization     := "com.example"
 ThisBuild / organizationName := "example"
 
 
-lazy val root = (project in file("."))
+lazy   val root = (project in file("."))
   .settings(
     name := "Example",
     // libraryDependencies += "org.scalactic" %% "scalactic" % "3.2.0",

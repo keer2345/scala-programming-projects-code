@@ -970,3 +970,77 @@ def fromEquityAndInflationData(equities: Vector[EquityData], inflations: Vector[
         .toVector
     )
 ```
+## Packaging the application
+### Creating the App object
+新建一个测试来集成几个组件，并使用全量数据集。例如，这不是哪个测试单元，而是集成测试。基于此，用 `IT` 后缀代替 `Spce`。
+
+首先，复制 [cp500.tsv](https://github.com/PacktPublishing/Scala-Programming-Projects/blob/master/Chapter02/retirement-calculator/src/main/resources/sp500.tsv) 和 [cpi.tsv](https://github.com/PacktPublishing/Scala-Programming-Projects/blob/master/Chapter02/retirement-calculator/src/main/resources/cpi.tsv) 到 `src/main/resources`，并在 `src/test/scala` 创建 `SimulatePlanappIT`。
+
+```scala
+package retcalc
+
+import org.scalactic.TypeCheckedTripleEquals
+import org.scalatest.matchers.should.Matchers
+import org.scalatest.wordspec.AnyWordSpec
+
+class SimulatePlanAppIT extends AnyWordSpec with Matchers with TypeCheckedTripleEquals {
+  "SimulatePlanApp" when {
+    "strMain" should {
+      "simulate a retirement plan using market returns" in {
+        val actualResult = SimulatePlanApp.strMain(Array("1997.09,2017.09", "25", "40", "3000", "2000", "10000"))
+        val expectedResult =
+          s"""
+             |Capital after 25 years of savings:    499923
+             |Capital after 40 years in retirement: 586435
+             |""".stripMargin
+
+        actualResult should ===(expectedResult)
+      }
+    }
+  }
+}
+```
+为了保持简单，我们假设参数有特定的顺序。我们将在下一章开发更多友好而有用的接口。本章将完成：
+1. 我们使用 `returns` 变量，通过逗号（comma）分离。
+1. 省钱的年数。
+1. 退休后的年数。
+1. 收入。
+1. 开销。
+1. 初始资金。
+
+`SimulatePlanApp`:
+```scala
+package retcalc
+
+object SimulatePlanApp extends App {
+  println(strMain(args))
+
+  def strMain(args: Array[String]): String = {
+    val (from +: until +: Nil) = args(0).split(",").toList
+    val nbOfYearsSaving = args(1).toInt
+    val nbOfYearsInRetirement = args(2).toInt
+
+    val allReturns =
+      Returns.fromEquityAndInflationData(
+        equities = EquityData.fromResource("sp500.tsv"),
+        inflations = InflationData.fromResource("cpi.tsv")
+      )
+    val (capitalAtRetirement, capitalAfterDeath) = RetCalc.simulatePlan(
+      returns = allReturns.fromUntil(from, until),
+      params = RetCalcParams(
+        nbOfMonthsInRetirement = nbOfYearsInRetirement * 12,
+        netIncome = args(3).toInt,
+        currentExpenses = args(4).toInt,
+        initialCapital = args(5).toInt
+      ),
+      nbOfMonthsSavings = nbOfYearsSaving * 12
+    )
+
+    s"""
+       |Capital after $nbOfYearsSaving years of savings:    ${capitalAtRetirement.round}
+       |Capital after $nbOfYearsInRetirement years in retirement: ${capitalAfterDeath.round}
+       |""".stripMargin
+
+  }
+}
+```
